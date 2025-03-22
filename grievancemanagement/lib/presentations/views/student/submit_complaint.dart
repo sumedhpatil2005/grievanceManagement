@@ -22,6 +22,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   final _descriptionController = TextEditingController();
   String _selectedCategory = 'Academic Issues';
   final ComplaintService _complaintService = ComplaintService();
+  String _studentName = '';
+  String _department = '';
 
   final List<String> _categories = [
     'Academic Issues',
@@ -31,10 +33,36 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
     'Harassment & Discrimination',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _fetchStudentDetails();
+  }
+
+  Future<void> _fetchStudentDetails() async {
+    try {
+      final studentDoc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(widget.studentId)
+              .get();
+
+      if (studentDoc.exists) {
+        final studentData = studentDoc.data() as Map<String, dynamic>;
+        setState(() {
+          _studentName = studentData['name'] ?? 'Unknown Student';
+          _department = studentData['department'] ?? 'Not applicable';
+        });
+      }
+    } catch (e) {
+      print('Error fetching student details: $e');
+    }
+  }
+
   Future<void> _submitComplaint() async {
     if (_formKey.currentState!.validate()) {
       final complaint = Complaint(
-        studentName: '',
+        studentName: _studentName, // Ensure this is included
         id: '', // Firestore will auto-generate this
         category: _selectedCategory,
         title: _titleController.text,
@@ -44,7 +72,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         assignedTo: null,
         createdAt: DateTime.now(),
         updatedAt: null,
-        department: '',
+        department: _department, // Ensure this is included
       );
 
       try {
@@ -197,20 +225,18 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                 Text(
                   'Complaint History',
                   style: GoogleFonts.poppins(
-                    fontSize: 24, // Slightly larger font size
-                    fontWeight: FontWeight.bold, // Bold text
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
                     foreground:
                         Paint()
                           ..shader = LinearGradient(
                             colors: [
-                              Colors.blue.shade900, // Dark blue
-                              Colors.blue.shade700, // Medium blue
+                              Colors.blue.shade900,
+                              Colors.blue.shade700,
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                          ).createShader(
-                            Rect.fromLTWH(0, 0, 200, 70),
-                          ), // Gradient text effect
+                          ).createShader(Rect.fromLTWH(0, 0, 200, 70)),
                   ),
                 ),
                 SizedBox(height: 10),
@@ -218,21 +244,35 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                   stream:
                       FirebaseFirestore.instance
                           .collection('complaints')
-                          .where('student_id', isEqualTo: widget.studentId)
+                          .where(
+                            'student_id',
+                            isEqualTo: widget.studentId,
+                          ) // Ensure field name matches Firestore
                           .snapshots(),
                   builder: (context, snapshot) {
+                    // Debugging: Print connection state and data
+                    print('Connection State: ${snapshot.connectionState}');
+                    if (snapshot.hasData) {
+                      print('Complaints Data: ${snapshot.data!.docs}');
+                    }
+
                     if (snapshot.connectionState == ConnectionState.waiting) {
-                      return CircularProgressIndicator();
+                      return Center(child: CircularProgressIndicator());
                     }
                     if (snapshot.hasError) {
-                      return Text(
-                        'Error loading complaints: ${snapshot.error}',
+                      return Center(
+                        child: Text(
+                          'Error loading complaints: ${snapshot.error}',
+                          style: TextStyle(fontFamily: 'Poppins'),
+                        ),
                       );
                     }
                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return Text(
-                        'No complaints found.',
-                        style: TextStyle(fontFamily: 'Poppins'),
+                      return Center(
+                        child: Text(
+                          'No complaints found.',
+                          style: TextStyle(fontFamily: 'Poppins'),
+                        ),
                       );
                     }
 
@@ -248,74 +288,54 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                               margin: EdgeInsets.symmetric(
                                 vertical: 8,
                                 horizontal: 16,
-                              ), // Add horizontal margin
-                              elevation:
-                                  5, // Increase elevation for a more prominent look
+                              ),
+                              elevation: 5,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(
-                                  15,
-                                ), // Increase border radius
+                                borderRadius: BorderRadius.circular(15),
                               ),
                               child: Container(
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     colors: [
-                                      Colors.blue.shade100, // Light blue
-                                      Colors.white, // White
+                                      Colors.blue.shade100,
+                                      Colors.white,
                                     ],
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                   ),
-                                  borderRadius: BorderRadius.circular(
-                                    15,
-                                  ), // Match card border radius
+                                  borderRadius: BorderRadius.circular(15),
                                 ),
                                 child: ListTile(
-                                  contentPadding: EdgeInsets.all(
-                                    16,
-                                  ), // Add padding inside ListTile
+                                  contentPadding: EdgeInsets.all(16),
                                   title: Text(
                                     complaint.title,
                                     style: GoogleFonts.poppins(
                                       fontSize: 18,
-                                      fontWeight: FontWeight.w600, // Semi-bold
-                                      color:
-                                          Colors
-                                              .blue
-                                              .shade900, // Dark blue text
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.blue.shade900,
                                     ),
                                   ),
                                   subtitle: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      SizedBox(
-                                        height: 8,
-                                      ), // Add spacing between title and subtitle
+                                      SizedBox(height: 8),
                                       Text(
                                         complaint.status == 'pending'
                                             ? 'Status: Pending'
                                             : 'Status: Assigned to ${complaint.assignedTo}',
                                         style: GoogleFonts.poppins(
                                           fontSize: 14,
-                                          color:
-                                              Colors
-                                                  .grey
-                                                  .shade700, // Grey text for subtlety
+                                          color: Colors.grey.shade700,
                                         ),
                                       ),
-                                      SizedBox(
-                                        height: 8,
-                                      ), // Add spacing below subtitle
+                                      SizedBox(height: 8),
                                       if (complaint.assignedTo != null)
                                         Text(
                                           'Assigned To: ${complaint.assignedTo ?? 'not assigned to'}',
                                           style: GoogleFonts.poppins(
                                             fontSize: 14,
-                                            color:
-                                                Colors
-                                                    .grey
-                                                    .shade700, // Grey text for subtlety
+                                            color: Colors.grey.shade700,
                                           ),
                                         ),
                                     ],
@@ -323,18 +343,12 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                                   trailing:
                                       complaint.status == 'pending'
                                           ? Icon(
-                                            Icons.access_time, // Pending icon
-                                            color:
-                                                Colors
-                                                    .orange
-                                                    .shade700, // Orange for pending status
+                                            Icons.access_time,
+                                            color: Colors.orange.shade700,
                                           )
                                           : Icon(
-                                            Icons.check_circle, // Assigned icon
-                                            color:
-                                                Colors
-                                                    .green
-                                                    .shade700, // Green for assigned status
+                                            Icons.check_circle,
+                                            color: Colors.green.shade700,
                                           ),
                                 ),
                               ),

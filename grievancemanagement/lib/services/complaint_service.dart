@@ -4,19 +4,27 @@ import 'package:grievancemanagement/data/models/complaint_model.dart';
 class ComplaintService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Submit a new complaint
   Future<void> submitComplaint(Complaint complaint) async {
-    await _firestore.collection('complaints').add({
-      'category': complaint.category,
-      'title': complaint.title,
-      'description': complaint.description,
-      'student_id': complaint.studentId,
-      'status': 'pending',
-      'assigned_to': null,
-      'created_at': Timestamp.now(),
-      'updated_at': null,
-    });
+    try {
+      await _firestore.collection('complaints').add({
+        'category': complaint.category,
+        'title': complaint.title,
+        'description': complaint.description,
+        'student_id': complaint.studentId,
+        'student_name': complaint.studentName, // Ensure this is included
+        'department': complaint.department, // Ensure this is included
+        'status': 'pending',
+        'assigned_to': null,
+        'created_at': Timestamp.now(),
+        'updated_at': null,
+      });
+    } catch (e) {
+      throw e; // Propagate the error for handling in the UI
+    }
   }
 
+  // Get all complaints assigned to moderators
   Stream<List<Complaint>> getAssignedComplaints() {
     return _firestore
         .collection('complaints')
@@ -34,6 +42,7 @@ class ComplaintService {
         );
   }
 
+  // Get complaints assigned to a specific moderator
   Stream<List<Complaint>> getComplaintsForModerator(String moderatorId) {
     return _firestore
         .collection('complaints')
@@ -47,6 +56,7 @@ class ComplaintService {
         );
   }
 
+  // Update the status of a complaint
   Future<void> updateComplaintStatus(String complaintId, String status) async {
     await _firestore.collection('complaints').doc(complaintId).update({
       'status': status,
@@ -54,6 +64,7 @@ class ComplaintService {
     });
   }
 
+  // Get all complaints (ordered by creation date)
   Stream<List<Complaint>> getAllComplaints() {
     return _firestore
         .collection('complaints')
@@ -67,6 +78,7 @@ class ComplaintService {
         );
   }
 
+  // Get complaints for a specific student
   Stream<List<Complaint>> getComplaintsForStudent(String studentId) {
     return _firestore
         .collection('complaints')
@@ -80,11 +92,22 @@ class ComplaintService {
         );
   }
 
-  Future<void> assignComplaint(String complaintId, String moderatorId) async {
-    await _firestore.collection('complaints').doc(complaintId).update({
-      'assigned_to': moderatorId,
-      'status': 'assigned',
-      'updated_at': FieldValue.serverTimestamp(),
-    });
+  // Assign a complaint to a moderator
+  Future<void> assignComplaint(
+    String complaintId,
+    String moderatorId,
+    String studentName,
+    String department,
+  ) async {
+    try {
+      await _firestore.collection('complaints').doc(complaintId).update({
+        'assigned_to': moderatorId, // Ensure consistent field name
+        'status': 'assigned',
+        'student_name': studentName, // Ensure consistent field name
+        'department': department, // Ensure consistent field name
+      });
+    } catch (e) {
+      throw e;
+    }
   }
 }

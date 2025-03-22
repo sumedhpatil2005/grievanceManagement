@@ -47,12 +47,27 @@ class _ComplaintListScreenState extends State<ComplaintListScreen> {
               child: Text('No complaints found.', style: GoogleFonts.poppins()),
             );
           }
-          final complaints = snapshot.data!;
+
+          // Filter out complaints with status "assigned"
+          final complaints =
+              snapshot.data!
+                  .where((complaint) => complaint.status != 'assigned')
+                  .toList();
+
+          if (complaints.isEmpty) {
+            return Center(
+              child: Text(
+                'No unassigned complaints found.',
+                style: GoogleFonts.poppins(),
+              ),
+            );
+          }
 
           return ListView.builder(
             itemCount: complaints.length,
             itemBuilder: (context, index) {
               final complaint = complaints[index];
+              // Debugging
               return Card(
                 margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 elevation: 5,
@@ -91,7 +106,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Student: ${complaint.studentName}',
+                          'Student: ${complaint.studentName ?? 'Unknown'}', // Handle null studentName
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: Colors.grey.shade700,
@@ -99,7 +114,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Department: ${complaint.department ?? 'Not applicable'}',
+                          'Department: ${complaint.department ?? 'Not applicable'}', // Handle null department
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: Colors.grey.shade700,

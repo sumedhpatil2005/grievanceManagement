@@ -100,19 +100,49 @@ class AssignComplaintScreen extends StatelessWidget {
                       ),
                       onTap: () async {
                         try {
-                          await _complaintService.assignComplaint(
-                            complaintId,
-                            moderatorId,
-                          );
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'Complaint assigned successfully!',
-                                style: TextStyle(fontFamily: 'Poppins'),
+                          // Fetch the complaint details to get studentName and department
+                          final complaintDoc =
+                              await FirebaseFirestore.instance
+                                  .collection('complaints')
+                                  .doc(complaintId)
+                                  .get();
+
+                          if (complaintDoc.exists) {
+                            final complaintData =
+                                complaintDoc.data() as Map<String, dynamic>;
+                            final studentName =
+                                complaintData['studentName'] ??
+                                'Unknown Student';
+                            final department =
+                                complaintData['department'] ?? 'Not applicable';
+
+                            // Assign the complaint with studentName and department
+                            await _complaintService.assignComplaint(
+                              complaintId,
+                              moderatorId,
+                              studentName,
+                              department,
+                            );
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Complaint assigned successfully!',
+                                  style: TextStyle(fontFamily: 'Poppins'),
+                                ),
                               ),
-                            ),
-                          );
-                          Navigator.pop(context);
+                            );
+                            Navigator.pop(context);
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  'Complaint not found.',
+                                  style: TextStyle(fontFamily: 'Poppins'),
+                                ),
+                              ),
+                            );
+                          }
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
