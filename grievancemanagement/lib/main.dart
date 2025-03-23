@@ -123,7 +123,7 @@ Widget getRoleBasedScreen(UserModel user) {
     case 'moderator':
       return ModeratorDashboard(moderatorId: user.id);
     case 'principal':
-      return PrincipalDashboard();
+      return PrincipleDashboard();
     default:
       throw Exception('Invalid role: ${user.role}');
   }

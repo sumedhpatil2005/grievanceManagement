@@ -3,13 +3,15 @@ class UserModel {
   final String name;
   final String email;
   final String role;
-  final String? department; // 'student', 'moderator', 'principal'
+  final String? department;
+  final String? year; // 'student', 'moderator', 'principal'
 
   UserModel({
     required this.id,
     required this.name,
     required this.email,
     required this.role,
+    this.year,
     this.department,
   });
 
@@ -20,6 +22,7 @@ class UserModel {
       email: data['email'],
       role: data['role'],
       department: data['role'] == 'principal' ? null : data['department'],
+      year: data['year'] == 'principal' ? null : data['year'],
     );
   }
 
@@ -29,6 +32,7 @@ class UserModel {
       'email': email,
       'role': role,
       'department': department,
+      'year': year,
     };
   }
 }

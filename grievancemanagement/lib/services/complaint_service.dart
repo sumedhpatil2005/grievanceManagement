@@ -14,13 +14,14 @@ class ComplaintService {
         'student_id': complaint.studentId,
         'student_name': complaint.studentName, // Ensure this is included
         'department': complaint.department, // Ensure this is included
-        'status': 'pending',
-        'assigned_to': null,
+        'status': 'pending', // Default status
+        'assigned_to': complaint.assignedTo, // Ensure this matches Firestore
         'created_at': Timestamp.now(),
         'updated_at': null,
+        'year': complaint.year,
       });
     } catch (e) {
-      throw e; // Propagate the error for handling in the UI
+      throw Exception('Failed to submit complaint: $e');
     }
   }
 
@@ -58,10 +59,26 @@ class ComplaintService {
 
   // Update the status of a complaint
   Future<void> updateComplaintStatus(String complaintId, String status) async {
-    await _firestore.collection('complaints').doc(complaintId).update({
-      'status': status,
-      'updated_at': Timestamp.now(),
-    });
+    try {
+      await _firestore.collection('complaints').doc(complaintId).update({
+        'status': status,
+        'updated_at': Timestamp.now(),
+      });
+    } catch (e) {
+      throw Exception('Failed to update complaint status: $e');
+    }
+  }
+
+  // Mark a complaint as resolved
+  Future<void> resolveComplaint(String complaintId) async {
+    try {
+      await _firestore.collection('complaints').doc(complaintId).update({
+        'status': 'resolved',
+        'updated_at': Timestamp.now(),
+      });
+    } catch (e) {
+      throw Exception('Failed to resolve complaint: $e');
+    }
   }
 
   // Get all complaints (ordered by creation date)
@@ -92,22 +109,31 @@ class ComplaintService {
         );
   }
 
+  // Get resolved complaints
+  Stream<List<Complaint>> getResolvedComplaints() {
+    return _firestore
+        .collection('complaints')
+        .where('status', isEqualTo: 'resolved')
+        .orderBy('created_at', descending: true)
+        .snapshots()
+        .map(
+          (snapshot) =>
+              snapshot.docs
+                  .map((doc) => Complaint.fromMap(doc.data(), doc.id))
+                  .toList(),
+        );
+  }
+
   // Assign a complaint to a moderator
-  Future<void> assignComplaint(
-    String complaintId,
-    String moderatorId,
-    String studentName,
-    String department,
-  ) async {
+  Future<void> assignComplaint(String complaintId, String moderatorId) async {
     try {
       await _firestore.collection('complaints').doc(complaintId).update({
-        'assigned_to': moderatorId, // Ensure consistent field name
-        'status': 'assigned',
-        'student_name': studentName, // Ensure consistent field name
-        'department': department, // Ensure consistent field name
+        'assigned_to': moderatorId, // Assign the complaint to the moderator
+        'status': 'assigned', // Update the status to "assigned"
+        // Do not update student_name, department, or year here
       });
     } catch (e) {
-      throw e;
+      throw Exception('Failed to assign complaint: $e');
     }
   }
 }

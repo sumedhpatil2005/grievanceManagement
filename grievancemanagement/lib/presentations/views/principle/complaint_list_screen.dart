@@ -67,7 +67,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen> {
             itemCount: complaints.length,
             itemBuilder: (context, index) {
               final complaint = complaints[index];
-              // Debugging
+              print('Complaint Data: ${complaint.toMap()}'); // Debugging
               return Card(
                 margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 elevation: 5,
@@ -106,7 +106,7 @@ class _ComplaintListScreenState extends State<ComplaintListScreen> {
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'Student: ${complaint.studentName ?? 'Unknown'}', // Handle null studentName
+                          'Student: ${complaint.studentName}', // Handle null studentName
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: Colors.grey.shade700,
@@ -123,6 +123,14 @@ class _ComplaintListScreenState extends State<ComplaintListScreen> {
                         SizedBox(height: 8),
                         Text(
                           'Status: ${complaint.status}',
+                          style: GoogleFonts.poppins(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Year: ${complaint.year}',
                           style: GoogleFonts.poppins(
                             fontSize: 14,
                             color: Colors.grey.shade700,

@@ -85,9 +85,7 @@ class AssignComplaintScreen extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(
-                        15,
-                      ), // Match card border radius
+                      borderRadius: BorderRadius.circular(15),
                     ),
                     child: ListTile(
                       title: Text(
@@ -100,49 +98,21 @@ class AssignComplaintScreen extends StatelessWidget {
                       ),
                       onTap: () async {
                         try {
-                          // Fetch the complaint details to get studentName and department
-                          final complaintDoc =
-                              await FirebaseFirestore.instance
-                                  .collection('complaints')
-                                  .doc(complaintId)
-                                  .get();
+                          // Assign the complaint to the moderator
+                          await _complaintService.assignComplaint(
+                            complaintId,
+                            moderatorId,
+                          );
 
-                          if (complaintDoc.exists) {
-                            final complaintData =
-                                complaintDoc.data() as Map<String, dynamic>;
-                            final studentName =
-                                complaintData['studentName'] ??
-                                'Unknown Student';
-                            final department =
-                                complaintData['department'] ?? 'Not applicable';
-
-                            // Assign the complaint with studentName and department
-                            await _complaintService.assignComplaint(
-                              complaintId,
-                              moderatorId,
-                              studentName,
-                              department,
-                            );
-
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Complaint assigned successfully!',
-                                  style: TextStyle(fontFamily: 'Poppins'),
-                                ),
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Complaint assigned successfully!',
+                                style: TextStyle(fontFamily: 'Poppins'),
                               ),
-                            );
-                            Navigator.pop(context);
-                          } else {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  'Complaint not found.',
-                                  style: TextStyle(fontFamily: 'Poppins'),
-                                ),
-                              ),
-                            );
-                          }
+                            ),
+                          );
+                          Navigator.pop(context);
                         } catch (e) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(

@@ -78,6 +78,7 @@ class AuthService extends ChangeNotifier {
     String password,
     String role,
     String? department,
+    String? year,
   ) async {
     try {
       UserCredential userCredential = await _auth
@@ -88,6 +89,7 @@ class AuthService extends ChangeNotifier {
         'name': name,
         'email': email,
         'role': role,
+        if (year != null) 'year': year,
         if (department != null) 'department': department,
       });
 

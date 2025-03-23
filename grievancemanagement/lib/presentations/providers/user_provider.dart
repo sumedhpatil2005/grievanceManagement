@@ -11,6 +11,7 @@ class UserProvider with ChangeNotifier {
   String? _name;
   String? _department;
   bool _isLoading = true;
+  String? year;
 
   String? get uid => _uid;
   String? get role => _role;
@@ -39,6 +40,7 @@ class UserProvider with ChangeNotifier {
         _role = userDoc['role'];
         _name = userDoc['name'];
         _department = userDoc['department'] ?? "Not applicable";
+        year = userDoc['year'] ?? "Null";
       }
     } catch (e) {
       print('Error loading user data: $e');

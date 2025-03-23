@@ -24,6 +24,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
   final ComplaintService _complaintService = ComplaintService();
   String _studentName = '';
   String _department = '';
+  String _year = '';
 
   final List<String> _categories = [
     'Academic Issues',
@@ -52,6 +53,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         setState(() {
           _studentName = studentData['name'] ?? 'Unknown Student';
           _department = studentData['department'] ?? 'Not applicable';
+          _year = studentData['year'] ?? "Not found";
         });
       }
     } catch (e) {
@@ -72,7 +74,8 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         assignedTo: null,
         createdAt: DateTime.now(),
         updatedAt: null,
-        department: _department, // Ensure this is included
+        department: _department,
+        year: _year, // Ensure this is included
       );
 
       try {
@@ -92,6 +95,25 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         );
       }
     }
+  }
+
+  // Fetch moderator's name using their ID
+  Future<String> _getModeratorName(String moderatorId) async {
+    try {
+      final moderatorDoc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(moderatorId)
+              .get();
+
+      if (moderatorDoc.exists) {
+        final moderatorData = moderatorDoc.data() as Map<String, dynamic>;
+        return moderatorData['name'] ?? 'Unknown Moderator';
+      }
+    } catch (e) {
+      print('Error fetching moderator details: $e');
+    }
+    return 'Unknown Moderator';
   }
 
   @override
@@ -244,10 +266,7 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                   stream:
                       FirebaseFirestore.instance
                           .collection('complaints')
-                          .where(
-                            'student_id',
-                            isEqualTo: widget.studentId,
-                          ) // Ensure field name matches Firestore
+                          .where('student_id', isEqualTo: widget.studentId)
                           .snapshots(),
                   builder: (context, snapshot) {
                     // Debugging: Print connection state and data
@@ -284,74 +303,75 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
                               doc.data() as Map<String, dynamic>,
                               doc.id,
                             );
-                            return Card(
-                              margin: EdgeInsets.symmetric(
-                                vertical: 8,
-                                horizontal: 16,
-                              ),
-                              elevation: 5,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.blue.shade100,
-                                      Colors.white,
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
+                            return FutureBuilder<String>(
+                              future:
+                                  complaint.assignedTo != null
+                                      ? _getModeratorName(complaint.assignedTo!)
+                                      : Future.value('Not assigned'),
+                              builder: (context, moderatorNameSnapshot) {
+                                final moderatorName =
+                                    moderatorNameSnapshot.data ?? 'Loading...';
+                                return Card(
+                                  margin: EdgeInsets.symmetric(
+                                    vertical: 8,
+                                    horizontal: 16,
                                   ),
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: ListTile(
-                                  contentPadding: EdgeInsets.all(16),
-                                  title: Text(
-                                    complaint.title,
-                                    style: GoogleFonts.poppins(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.blue.shade900,
+                                  elevation: 5,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15),
+                                  ),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Colors.blue.shade100,
+                                          Colors.white,
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      borderRadius: BorderRadius.circular(15),
                                     ),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      SizedBox(height: 8),
-                                      Text(
-                                        complaint.status == 'pending'
-                                            ? 'Status: Pending'
-                                            : 'Status: Assigned to ${complaint.assignedTo}',
+                                    child: ListTile(
+                                      contentPadding: EdgeInsets.all(16),
+                                      title: Text(
+                                        complaint.title,
                                         style: GoogleFonts.poppins(
-                                          fontSize: 14,
-                                          color: Colors.grey.shade700,
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.blue.shade900,
                                         ),
                                       ),
-                                      SizedBox(height: 8),
-                                      if (complaint.assignedTo != null)
-                                        Text(
-                                          'Assigned To: ${complaint.assignedTo ?? 'not assigned to'}',
-                                          style: GoogleFonts.poppins(
-                                            fontSize: 14,
-                                            color: Colors.grey.shade700,
+                                      subtitle: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          SizedBox(height: 8),
+                                          Text(
+                                            'Status: ${complaint.status}',
+                                            style: GoogleFonts.poppins(
+                                              fontSize: 14,
+                                              color: Colors.grey.shade700,
+                                            ),
                                           ),
-                                        ),
-                                    ],
+                                          SizedBox(height: 8),
+                                          if (complaint.assignedTo != null)
+                                            Text(
+                                              'Assigned To: $moderatorName',
+                                              style: GoogleFonts.poppins(
+                                                fontSize: 14,
+                                                color: Colors.grey.shade700,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      trailing: _getStatusIcon(
+                                        complaint.status,
+                                      ),
+                                    ),
                                   ),
-                                  trailing:
-                                      complaint.status == 'pending'
-                                          ? Icon(
-                                            Icons.access_time,
-                                            color: Colors.orange.shade700,
-                                          )
-                                          : Icon(
-                                            Icons.check_circle,
-                                            color: Colors.green.shade700,
-                                          ),
-                                ),
-                              ),
+                                );
+                              },
                             );
                           }).toList(),
                     );
@@ -363,5 +383,19 @@ class _SubmitComplaintScreenState extends State<SubmitComplaintScreen> {
         ),
       ),
     );
+  }
+
+  // Helper method to get icons based on status
+  Widget _getStatusIcon(String status) {
+    switch (status) {
+      case 'pending':
+        return Icon(Icons.access_time, color: Colors.orange);
+      case 'assigned':
+        return Icon(Icons.assignment_turned_in, color: Colors.blue);
+      case 'resolved':
+        return Icon(Icons.check_circle, color: Colors.green);
+      default:
+        return Icon(Icons.error, color: Colors.red);
+    }
   }
 }

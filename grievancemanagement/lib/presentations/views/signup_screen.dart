@@ -18,6 +18,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   final _passwordController = TextEditingController();
   String _selectedRole = 'student'; // Default role
   String? _selectedDepartment; // Selected department
+  String? _selectedYear; // Selected year for students
   final bool _isloading = false;
   final List<String> _roles = ['student', 'moderator', 'principal'];
   final List<String> _departments = [
@@ -28,6 +29,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     'Civil',
     'Information Technology',
   ];
+  final List<String> _years = ['1st year', '2nd year', '3rd year', '4th year'];
 
   late AnimationController _controller;
   late Animation<Color?> _colorAnimation;
@@ -267,6 +269,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               _selectedRole = value!;
                               _selectedDepartment =
                                   null; // Reset department on role change
+                              _selectedYear = null; // Reset year on role change
                             });
                           },
                           decoration: InputDecoration(
@@ -338,6 +341,53 @@ class _RegisterScreenState extends State<RegisterScreen>
                           ),
                         ),
                       ),
+                      SizedBox(height: 20),
+
+                      // Year Dropdown (Conditional for Students)
+                      Visibility(
+                        visible: _selectedRole == 'student',
+                        child: AnimatedContainer(
+                          duration: Duration(seconds: 1),
+                          curve: Curves.easeInOut,
+                          width: MediaQuery.of(context).size.width * 0.8,
+                          child: DropdownButtonFormField<String>(
+                            value: _selectedYear,
+                            items:
+                                _years.map((year) {
+                                  return DropdownMenuItem(
+                                    value: year,
+                                    child: Text(
+                                      year,
+                                      style: GoogleFonts.poppins(),
+                                    ),
+                                  );
+                                }).toList(),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedYear = value!;
+                              });
+                            },
+                            decoration: InputDecoration(
+                              labelText: 'Year',
+                              labelStyle: GoogleFonts.poppins(),
+                              enabledBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.grey,
+                                  width: 1.5,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Colors.blue.shade900,
+                                  width: 2,
+                                ),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                       SizedBox(height: 30),
 
                       // Register Button with Animation
@@ -360,6 +410,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               final password = _passwordController.text.trim();
                               final role = _selectedRole;
                               final department = _selectedDepartment;
+                              final year = _selectedYear;
 
                               // Validate department for student/moderator
                               if ((role == 'student' || role == 'moderator') &&
@@ -375,6 +426,20 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 return;
                               }
 
+                              // Validate year for students
+                              if (role == 'student' &&
+                                  (year == null || year.isEmpty)) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Please select a year',
+                                      style: GoogleFonts.poppins(),
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+
                               // Register the user
                               await authService.register(
                                 name,
@@ -382,6 +447,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 password,
                                 role,
                                 department, // This can be null for principal
+                                year, // This can be null for non-students
                               );
 
                               // Navigate to the dashboard

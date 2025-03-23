@@ -12,6 +12,7 @@ class Complaint {
   final DateTime? updatedAt; // Nullable
   final String? department;
   final String? studentName; // Nullable
+  final String? year;
 
   Complaint({
     required this.id,
@@ -25,27 +26,45 @@ class Complaint {
     required this.createdAt,
     this.updatedAt,
     this.department,
+    this.year,
   });
 
   factory Complaint.fromMap(Map<String, dynamic> data, String id) {
     return Complaint(
-      studentName: data['studentName'],
+      studentName: data['student_name'],
       id: id,
       studentId: data['student_id'] ?? '', // Handle null
       title: data['title'] ?? '', // Handle null
       description: data['description'] ?? '', // Handle null
       category: data['category'] ?? '', // Handle null
       status: data['status'] ?? 'pending', // Handle null
-      assignedTo: data['assignedTo'], // Can be null
+      assignedTo: data['assigned_to'], // Ensure this matches Firestore
       createdAt:
-          data['createdAt'] != null
-              ? (data['createdAt'] as Timestamp).toDate()
+          data['created_at'] != null
+              ? (data['created_at'] as Timestamp).toDate()
               : DateTime.now(),
       updatedAt:
-          data['updatedAt'] != null
-              ? (data['updatedAt'] as Timestamp).toDate()
+          data['updated_at'] != null
+              ? (data['updated_at'] as Timestamp).toDate()
               : null, // Can be null
       department: data['department'], // Can be null
+      year: data['year'],
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'student_id': studentId,
+      'student_name': studentName, // Ensure this is included
+      'department': department, // Ensure this is included
+      'status': status,
+      'assigned_to': assignedTo, // Ensure this matches Firestore
+      'created_at': Timestamp.fromDate(createdAt),
+      'updated_at': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
+      'year': year,
+    };
   }
 }
