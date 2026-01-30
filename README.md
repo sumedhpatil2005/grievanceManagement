@@ -38,7 +38,7 @@ This repository contains:
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | ( Flutter / React / HTML-CSS) |
+| Frontend | ( Flutter ) |
 | Backend | (e.g.,  / Firebase ) |
 | Database | (e.g., Firestore ) |
 
